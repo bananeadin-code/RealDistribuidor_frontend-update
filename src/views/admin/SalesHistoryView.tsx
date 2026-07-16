@@ -404,6 +404,15 @@ function SaleDetailModal({
                       </p>
                     </div>
                   )}
+                  {sale.source === 'seller' && sale.sellerName && (
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">Seller</p>
+                      <p className="font-semibold text-indigo-600 text-sm flex items-center gap-1">
+                        <UserIcon className="w-3.5 h-3.5" />
+                        {sale.sellerName}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Delivery / Notes — editable en cualquier status */}

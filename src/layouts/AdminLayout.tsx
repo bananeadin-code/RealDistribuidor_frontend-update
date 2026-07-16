@@ -18,6 +18,7 @@ import {
   UserGroupIcon,
   ClockIcon,
   BellAlertIcon,
+  BriefcaseIcon,
 } from '@heroicons/react/24/outline'
 import Logo from '../components/Logo'
 import { useAuth } from '../hooks/useAuth'
@@ -32,6 +33,7 @@ const NAV_LINKS = [
   { label: 'Pending Orders',     path: '/admin-view-privated/pending-orders',   icon: ClockIcon,                  showPending: true  },
   { label: 'Products',           path: '/admin-view-privated/products',         icon: CubeIcon,                   showLowStock: true },
   { label: 'Pickers',            path: '/admin-view-privated/pickers',          icon: UserGroupIcon                                 },
+  { label: 'Sellers',            path: '/admin-view-privated/sellers',          icon: BriefcaseIcon                                 },
   { label: 'Suppliers',          path: '/admin-view-privated/suppliers',        icon: TruckIcon                                     },
   { label: 'Purchase Orders',    path: '/admin-view-privated/purchase-orders',  icon: ClipboardDocumentCheckIcon                    },
   { label: 'Sales History',      path: '/admin-view-privated/orders',           icon: ClipboardDocumentListIcon                     },

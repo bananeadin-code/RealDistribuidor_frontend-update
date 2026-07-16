@@ -20,6 +20,8 @@ import CreateEditRegionView from './views/admin/CreateEditRegionView'
 import PendingOrdersView from './views/admin/PendingOrdersView'
 import PickersView from './views/admin/PickersView'
 import PickerLayout from './layouts/PickerLayout'
+import SellersView from './views/admin/SellersView'
+import SellerLayout from './layouts/SellerLayout'
 export default function Router(){
 
     return (
@@ -38,6 +40,7 @@ export default function Router(){
                     <Route path="/admin-view-privated/orders" element={<SalesHistoryView /> } />
                     <Route path="/admin-view-privated/pending-orders" element={<PendingOrdersView /> } />
                     <Route path="/admin-view-privated/pickers" element={<PickersView /> } />
+                    <Route path="/admin-view-privated/sellers" element={<SellersView /> } />
                     <Route path="/admin-view-privated/purchase-orders" element={<PurchaseOrdersView /> } />
                     <Route path="/admin-view-privated/create-admin" element={<AddAdminView /> } />
                     <Route path="/admin-view-privated/manage-regions" element={<AdminManageRegionsView /> } />
@@ -52,6 +55,7 @@ export default function Router(){
                     <Route path="/cart" element={<CartView /> } />
                 </Route>
                 <Route path='/picker' element={<PickerLayout />}></Route>
+                <Route path='/seller' element={<SellerLayout />}></Route>
              </Routes>
         </BrowserRouter>
     )

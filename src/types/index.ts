@@ -200,6 +200,8 @@ export type SaleFormData = {
   total:         number
   paymentMethod: PaymentMethod
   notes:         string
+  seller?:       string
+  sellerName?:   string
 }
 
 // Estado del carrito (solo en el frontend)
@@ -246,6 +248,7 @@ export type CustomerFormData = {
   address: string
   notes:   string
   region:  string
+  salesperson: string
 }
 
 // ── Sesión de cliente en la tienda ────────────────────────────────────────────
@@ -281,7 +284,8 @@ export type Customer = {
   email?:      string
   address?:    string
   notes?:      string
-  region?:     Region 
+  region?:     Region
+  salesperson?: Seller | string | null
   accessCode?: string
   visitCount?: number
   createdAt?:  string
@@ -319,6 +323,28 @@ export type PickerSession = {
   name: string
 }
 
+// ── Seller (vendedor) ───────────────────────────────────────────────────────────
+export type Seller = {
+  _id:            string
+  name:           string
+  sellerNumber:   number
+  accessCode?:    string
+  customerCount?: number
+  orderCount?:    number
+  createdAt?:     string
+}
+
+export type SellerFormData = { name: string }
+
+export type SellerSession = {
+  _id:          string
+  name:         string
+  sellerNumber: number
+}
+
+export const sellerLabel = (s: Seller) =>
+  `${s.name} ${String(s.sellerNumber).padStart(4, '0')}`
+
 // ── SaleItem — agrega campos de surtido ───────────────────────────────────────
 export type SaleItem = {
   product:         string
@@ -346,10 +372,12 @@ export type Sale = {
   status:        SaleStatus
   notes?:        string
   deliveryExtraAmount?: number
-  source?:       'admin' | 'shop'
+  source?:       'admin' | 'shop' | 'seller'
   picker?:       Picker | string | null
   pickerName?:   string
   pickedAt?:     string
+  seller?:       Seller | string | null
+  sellerName?:   string
   createdAt?:    string
   updatedAt?:    string
 }

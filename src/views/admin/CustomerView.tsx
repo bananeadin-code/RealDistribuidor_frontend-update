@@ -11,13 +11,15 @@ import { toast } from 'react-toastify'
 
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../../api/CustomerAPI'
 import type { Customer, CustomerFormData }                              from '../../types'
+import { sellerLabel } from '../../types'
 import { getRegions } from '../../api/RegionAPI'
-import { ClipboardDocumentIcon } from '@heroicons/react/24/outline'
+import { getSellers } from '../../api/SellerAPI'
+import { ClipboardDocumentIcon, BriefcaseIcon } from '@heroicons/react/24/outline'
 import { regenerateAccessCode } from '../../api/CustomerAPI'
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 const DEFAULT_FORM: CustomerFormData = {
-  name: '', phone: '', email: '', address: '', notes: '', region: ''
+  name: '', phone: '', email: '', address: '', notes: '', region: '', salesperson: ''
 }
 
 const INPUT_CLS = `
@@ -30,6 +32,7 @@ const initials = (name: string) =>
   name.trim().split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 
 const regionLabel = (r: Customer['region']) => r && typeof r === 'object' ? `[${r.regionCode}] ${r.regionName}` : null
+const salespersonLabel = (s: Customer['salesperson']) => s && typeof s === 'object' ? sellerLabel(s) : null
 
 function FormField({
   label, required, children,
@@ -144,6 +147,13 @@ function CustomerCard({
           </div>
         )}
 
+        {salespersonLabel(customer.salesperson) && (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <BriefcaseIcon className="w-4 h-4 text-gray-400 shrink-0" />
+            <span>Seller: <span className="font-medium text-gray-700">{salespersonLabel(customer.salesperson)}</span></span>
+          </div>
+        )}
+
         {customer.notes && (
           <div className="flex items-start gap-2 text-sm text-gray-500">
             <DocumentTextIcon className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
@@ -204,6 +214,11 @@ function CustomerFormModal({
     queryFn: getRegions
   })
 
+  const { data: sellers = [] } = useQuery({
+    queryKey: ['Sellers'],
+    queryFn: getSellers
+  })
+
   const selectedRegion = regions.find(r => r._id === form.region) ?? null
 
   useEffect(() => {
@@ -217,6 +232,8 @@ function CustomerFormModal({
           address: customer.address ?? '',
           notes:   customer.notes   ?? '',
           region:  customer.region?._id  ?? '',
+          salesperson: customer.salesperson && typeof customer.salesperson === 'object'
+            ? customer.salesperson._id : '',
         }
       : DEFAULT_FORM
   )
@@ -372,6 +389,20 @@ function CustomerFormModal({
                   </p>
                 </div>
               )}
+            </FormField>
+
+            <FormField label="Assigned Salesperson">
+              <select
+                name="salesperson"
+                value={form.salesperson}
+                onChange={handleChange}
+                className={INPUT_CLS}
+              >
+                <option value="">— No salesperson assigned —</option>
+                {sellers.map(s => (
+                  <option key={s._id} value={s._id}>{sellerLabel(s)}</option>
+                ))}
+              </select>
             </FormField>
 
             <FormField label="Notes">

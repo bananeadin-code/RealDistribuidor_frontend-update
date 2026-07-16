@@ -4,11 +4,12 @@ import { Dialog, DialogBackdrop, DialogPanel }    from '@headlessui/react'
 import {
   MagnifyingGlassIcon, EyeIcon, XMarkIcon,
   XCircleIcon, UserIcon, ClockIcon,
-  ShoppingBagIcon, BuildingStorefrontIcon,
+  ShoppingBagIcon, BuildingStorefrontIcon, BriefcaseIcon,
 } from '@heroicons/react/24/outline'
 import { toast } from 'react-toastify'
 
 import { getPendingOrders, updateSaleStatus } from '../../api/SaleAPI'
+import { sellerLabel } from '../../types'
 import type { Sale } from '../../types'
 
 const fmtDateTime = (iso?: string) => {
@@ -19,6 +20,7 @@ const fmtDateTime = (iso?: string) => {
 const shortId       = (id: string) => id.slice(-6).toUpperCase()
 const customerLabel = (c: Sale['customer']) => c && typeof c === 'object' ? c.name : 'Walk-in Customer'
 const pickerLabel   = (p: Sale['picker']) => p && typeof p === 'object' ? p.name : null
+const orderSellerLabel = (s: Sale['seller']) => s && typeof s === 'object' ? sellerLabel(s) : null
 
 // ─── Detail modal ──────────────────────────────────────────────────────────────
 function PendingDetailModal({
@@ -62,6 +64,8 @@ function PendingDetailModal({
                     <p className="font-semibold text-gray-700 text-sm mt-0.5 capitalize flex items-center gap-1">
                       {order.source === 'shop'
                         ? <><BuildingStorefrontIcon className="w-3.5 h-3.5" /> Store</>
+                        : order.source === 'seller'
+                        ? <><BriefcaseIcon className="w-3.5 h-3.5" /> {orderSellerLabel(order.seller) ?? order.sellerName ?? 'Seller'}</>
                         : <><ShoppingBagIcon className="w-3.5 h-3.5" /> Admin</>}
                     </p>
                   </div>
@@ -147,6 +151,12 @@ function PendingCard({ order, onView }: { order: Sale; onView: () => void }) {
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-600
                            border border-purple-200 font-semibold flex items-center gap-0.5">
             <BuildingStorefrontIcon className="w-3 h-3" /> Store
+          </span>
+        )}
+        {order.source === 'seller' && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600
+                           border border-indigo-200 font-semibold flex items-center gap-0.5 shrink-0">
+            <BriefcaseIcon className="w-3 h-3" /> {orderSellerLabel(order.seller) ?? order.sellerName ?? 'Seller'}
           </span>
         )}
       </div>
