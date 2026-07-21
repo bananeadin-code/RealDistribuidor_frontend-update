@@ -29,6 +29,10 @@ export async function login(formData: AdminLoginForm) {
     }
 }
 
+export function logout() {
+    localStorage.removeItem('AUTH_TOKEN')
+}
+
 export async function getUser() {
     try {
         const { data } = await api('admin/user')

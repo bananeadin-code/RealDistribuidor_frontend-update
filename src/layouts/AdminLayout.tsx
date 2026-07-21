@@ -19,12 +19,14 @@ import {
   ClockIcon,
   BellAlertIcon,
   BriefcaseIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 import Logo from '../components/Logo'
 import { useAuth } from '../hooks/useAuth'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getProducts } from '../api/ProductAPI'
 import { getPendingCount } from '../api/SaleAPI'
+import { logout } from '../api/AuthAPI'
 
 // ─── Agrega aquí nuevos módulos cuando los necesites ──────
 const NAV_LINKS = [
@@ -46,9 +48,17 @@ export default function AppLayout() {
   const [open, setOpen] = useState(false)
   const location        = useLocation()
   const navigate        = useNavigate()
+  const queryClient     = useQueryClient()
 
   // Todos los hooks siempre al tope (regla de React)
   const { data: admin, isError, isLoading } = useAuth()
+
+  const handleLogout = () => {
+    logout()
+    queryClient.clear()
+    setOpen(false)
+    navigate('/admin-view-privated/login')
+  }
 
   const { data: products } = useQuery({
     queryKey: ['Products'],
@@ -163,6 +173,19 @@ export default function AppLayout() {
                 )
               })}
             </nav>
+
+            {/* Log out */}
+            <div className="px-3 py-3 border-t border-white/10">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl
+                           text-sm font-medium text-red-300 hover:bg-red-500/10
+                           hover:text-red-200 transition-all"
+              >
+                <ArrowRightOnRectangleIcon className="w-5 h-5 shrink-0" />
+                <span>Log out</span>
+              </button>
+            </div>
 
             <div className="px-5 py-3 border-t border-white/10">
               <p className="text-[10px] text-white/30 text-center">
