@@ -94,6 +94,10 @@ export default function CreateEditProductView() {
   const [form,         setForm]         = useState<ProductFormData>(DEFAULT_FORM)
   const [imagePreview, setImagePreview] = useState<string>('')
   const [imageFile, setImageFile] = useState<File | null>(null)
+  // Texto crudo de los campos numéricos mientras se editan. Se manejan como
+  // texto (no type="number") para que el separador decimal no borre el campo
+  // en dispositivos/idiomas con coma decimal.
+  const [rawNumbers, setRawNumbers] = useState<Record<string, string>>({})
 
   // Fetch en modo edición
   const { data: existing } = useQuery<Product>({
@@ -126,6 +130,9 @@ export default function CreateEditProductView() {
         ...prev,
         pricePerPiece: parseFloat((prev.salePrice / prev.piecesPerBox).toFixed(2)),
       }))
+      setRawNumbers(prev => {
+        const next = { ...prev }; delete next.pricePerPiece; return next
+      })
     }
   }, [form.salePrice, form.piecesPerBox])
 
@@ -136,6 +143,9 @@ export default function CreateEditProductView() {
         ...prev,
         weightPerPiece: parseFloat((prev.weightPerBox / prev.piecesPerBox).toFixed(4)),
       }))
+      setRawNumbers(prev => {
+        const next = { ...prev }; delete next.weightPerPiece; return next
+      })
     }
   }, [form.weightPerBox, form.piecesPerBox])
 
@@ -165,12 +175,32 @@ export default function CreateEditProductView() {
 
   const isPending = createMut.isPending || updateMut.isPending
 
-  // Handler genérico
+  // Handler genérico (campos de texto y selects)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     const isNumber = e.target instanceof HTMLInputElement && e.target.type === 'number'
     setForm(prev => ({ ...prev, [name]: isNumber ? parseFloat(value) || 0 : value }))
   }
+
+  // Solo dígitos y un separador decimal (se acepta punto o coma).
+  const NUMERIC_RE = /^\d*\.?\d*$/
+
+  // Handler para campos numéricos manejados como texto: valida que sea numérico
+  // antes de aceptar la tecla y conserva el valor crudo (incl. el punto final).
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name } = e.target
+    let value = e.target.value.replace(',', '.')      // coma decimal → punto
+    if (value !== '' && !NUMERIC_RE.test(value)) return // ignora caracteres no numéricos
+    value = value.replace(/^0+(?=\d)/, '')            // sin ceros a la izquierda
+    setRawNumbers(prev => ({ ...prev, [name]: value }))
+    const parsed = value === '' || value === '.' ? 0 : parseFloat(value)
+    setForm(prev => ({ ...prev, [name]: Number.isNaN(parsed) ? 0 : parsed }))
+  }
+
+  // Valor a mostrar en un campo numérico de texto: el crudo mientras se edita,
+  // o el valor del formulario (p. ej. los auto-calculados).
+  const numValue = (name: keyof ProductFormData) =>
+    rawNumbers[name] !== undefined ? rawNumbers[name] : String(form[name] ?? '')
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -183,6 +213,21 @@ export default function CreateEditProductView() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validar que los campos numéricos sean numéricos válidos (≥ 0) antes de enviar.
+    const numericKeys = [
+      'stock', 'salePrice', 'promotionalPrice', 'pricePerPiece',
+      'promotionalPricePerPiece', 'cost', 'piecesPerBox', 'unitsPerPallet',
+      'boxesPerLayer', 'layersPerPallet', 'weightPerBox', 'weightPerPiece', 'freight',
+    ] as const
+    const invalid = numericKeys.find(k => {
+      const n = Number(form[k])
+      return !Number.isFinite(n) || n < 0
+    })
+    if (invalid) {
+      toast.error('Please enter valid numeric values')
+      return
+    }
 
     const fd = new FormData()
 
@@ -278,8 +323,8 @@ export default function CreateEditProductView() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Stock" required>
-              <input name="stock" type="number" min={0} required
-                value={form.stock} onChange={handleChange} className={input} />
+              <input name="stock" type="text" inputMode="numeric" required
+                value={numValue('stock')} onChange={handleNumberChange} className={input} />
             </Field>
             <Field label="Supplier">
               <select name='supplier' onChange={handleChange} className={`${input}`} value={form.supplier}>
@@ -322,28 +367,28 @@ export default function CreateEditProductView() {
         <FormSection title="Prices">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Sale Price" required>
-              <input name="salePrice" type="number" min={0} step="0.01" required
-                value={form.salePrice} onChange={handleChange} className={input} />
+              <input name="salePrice" type="text" inputMode="decimal" required
+                value={numValue('salePrice')} onChange={handleNumberChange} className={input} />
             </Field>
             <Field label="Promotional Price">
-              <input name="promotionalPrice" type="number" min={0} step="0.01"
-                value={form.promotionalPrice} onChange={handleChange} className={input} />
+              <input name="promotionalPrice" type="text" inputMode="decimal"
+                value={numValue('promotionalPrice')} onChange={handleNumberChange} className={input} />
             </Field>
             <Field label="Price / Piece" hint="auto: price ÷ pieces per box">
-              <input name="pricePerPiece" type="number" min={0} step="0.01"
-                value={form.pricePerPiece}
-                onChange={handleChange}
+              <input name="pricePerPiece" type="text" inputMode="decimal"
+                value={numValue('pricePerPiece')}
+                onChange={handleNumberChange}
                 className={`${input} bg-gray-50 text-gray-400 cursor-default`} />
             </Field>
             <Field label="Promo Price / Piece">
-              <input name="promotionalPricePerPiece" type="number" min={0} step="0.01"
-                value={form.promotionalPricePerPiece} onChange={handleChange} className={input} />
+              <input name="promotionalPricePerPiece" type="text" inputMode="decimal"
+                value={numValue('promotionalPricePerPiece')} onChange={handleNumberChange} className={input} />
             </Field>
           </div>
           <div className="max-w-xs">
             <Field label="Cost per piece">
-              <input name="cost" type="number" min={0} step="0.01"
-                value={form.cost} onChange={handleChange} className={input} />
+              <input name="cost" type="text" inputMode="decimal"
+                value={numValue('cost')} onChange={handleNumberChange} className={input} />
             </Field>
           </div>
 
@@ -351,11 +396,10 @@ export default function CreateEditProductView() {
             <Field label="Freight (Flete)">
               <input
                 name="freight"
-                type="number"
-                min={0}
-                step="0.01"
-                value={form.freight}
-                onChange={handleChange}
+                type="text"
+                inputMode="decimal"
+                value={numValue('freight')}
+                onChange={handleNumberChange}
                 placeholder="0.00"
                 className={input}
               />
@@ -384,8 +428,8 @@ export default function CreateEditProductView() {
         <FormSection title="Pallet Logistics">
           <div className="max-w-xs">
             <Field label="Pieces per Box">
-              <input name="piecesPerBox" type="number" min={0}
-                value={form.piecesPerBox} onChange={handleChange} className={input} />
+              <input name="piecesPerBox" type="text" inputMode="numeric"
+                value={numValue('piecesPerBox')} onChange={handleNumberChange} className={input} />
             </Field>
           </div>
 
@@ -394,11 +438,10 @@ export default function CreateEditProductView() {
             <Field label="Weight per Box / Case" hint="(lb)">
               <input
                 name="weightPerBox"
-                type="number"
-                min={0}
-                step="0.0001"
-                value={form.weightPerBox}
-                onChange={handleChange}
+                type="text"
+                inputMode="decimal"
+                value={numValue('weightPerBox')}
+                onChange={handleNumberChange}
                 placeholder="0.00"
                 className={input}
               />
@@ -406,11 +449,10 @@ export default function CreateEditProductView() {
             <Field label="Weight per Piece" hint="auto (editable): box weight ÷ pieces (lb)">
               <input
                 name="weightPerPiece"
-                type="number"
-                min={0}
-                step="0.0001"
-                value={form.weightPerPiece}
-                onChange={handleChange}
+                type="text"
+                inputMode="decimal"
+                value={numValue('weightPerPiece')}
+                onChange={handleNumberChange}
                 placeholder="0.0000"
                 className={input}
               />
@@ -419,16 +461,16 @@ export default function CreateEditProductView() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Field label="Units / Pallet">
-              <input name="unitsPerPallet" type="number" min={0}
-                value={form.unitsPerPallet} onChange={handleChange} className={input} />
+              <input name="unitsPerPallet" type="text" inputMode="numeric"
+                value={numValue('unitsPerPallet')} onChange={handleNumberChange} className={input} />
             </Field>
             <Field label="Boxes / Layer">
-              <input name="boxesPerLayer" type="number" min={0}
-                value={form.boxesPerLayer} onChange={handleChange} className={input} />
+              <input name="boxesPerLayer" type="text" inputMode="numeric"
+                value={numValue('boxesPerLayer')} onChange={handleNumberChange} className={input} />
             </Field>
             <Field label="Layers / Pallet">
-              <input name="layersPerPallet" type="number" min={0}
-                value={form.layersPerPallet} onChange={handleChange} className={input} />
+              <input name="layersPerPallet" type="text" inputMode="numeric"
+                value={numValue('layersPerPallet')} onChange={handleNumberChange} className={input} />
             </Field>
           </div>
         </FormSection>

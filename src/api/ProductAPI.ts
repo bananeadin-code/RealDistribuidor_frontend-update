@@ -12,7 +12,15 @@ export const createProduct = async (formData: FormData): Promise<Product> => {
 export async function getProducts(): Promise<Product[]> {
     try {
         const { data } = await api('/products')
-        return data
+        // Orden alfabético por nombre (aplica al panel admin, a la tienda del
+        // cliente y a cualquier producto que se agregue después, ya que ambas
+        // vistas consumen esta misma función).
+        return (data as Product[]).sort((a, b) =>
+            a.productName.localeCompare(b.productName, undefined, {
+                sensitivity: 'base',
+                numeric: true,
+            })
+        )
     } catch (error) {
         if(isAxiosError(error) && error.response){
             throw new Error(error.response.data.error, { cause: error })
